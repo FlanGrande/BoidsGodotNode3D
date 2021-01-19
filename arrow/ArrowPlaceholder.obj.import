@@ -1,0 +1,19 @@
+[remap]
+
+importer="wavefront_obj"
+type="Mesh"
+path="res://.import/ArrowPlaceholder.obj-18e9f77e3b089fe061e4d9f544789f62.mesh"
+
+[deps]
+
+files=[ "res://.import/ArrowPlaceholder.obj-18e9f77e3b089fe061e4d9f544789f62.mesh" ]
+
+source_file="res://arrow/ArrowPlaceholder.obj"
+dest_files=[ "res://.import/ArrowPlaceholder.obj-18e9f77e3b089fe061e4d9f544789f62.mesh", "res://.import/ArrowPlaceholder.obj-18e9f77e3b089fe061e4d9f544789f62.mesh" ]
+
+[params]
+
+generate_tangents=true
+scale_mesh=Vector3( 1, 1, 1 )
+offset_mesh=Vector3( 0, 0, 0 )
+optimize_mesh=true
