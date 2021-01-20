@@ -4,12 +4,12 @@ extends Spatial
 
 onready var boid_scene = preload("res://Boid3D.tscn")
 
-var window_width = 16.0
-var window_height = 16.0
+var window_width = 24.0
+var window_height = 24.0
 var forward_depth = 16.0
 
 const numBoids = 20
-const visualRange = 0.1
+const visualRange = 20
 
 var boids = []
 
@@ -44,8 +44,8 @@ func _process(delta):
 # Constrain a boid to within the window. If it gets too close to an edge,
 # nudge it back in and reverse its direction.
 func keepWithinBounds(boid : Boid3D):
-	var margin = 30.0 # CONST?
-	var turnFactor = 1.0 # CONST?
+	var margin = 40.0 # CONST?
+	var turnFactor = 0.1 # CONST?
 	
 	if (boid.x < margin):
 		boid.dx += turnFactor
@@ -146,7 +146,7 @@ func matchVelocity(boid : Boid3D):
 # Speed will naturally vary in flocking behavior, but real animals can't go
 # arbitrarily fast.
 func limitSpeed(boid : Boid3D):
-	var speedLimit = 0.3# CONST?
+	var speedLimit = 1.0# CONST?
 	var speed = pow(boid.dx * boid.dx + boid.dy * boid.dy + boid.dz * boid.dz, 1.0/3.0) # CONST?
 	
 	if(speed > speedLimit):
@@ -156,12 +156,5 @@ func limitSpeed(boid : Boid3D):
 
 func drawBoid(boid : Boid3D):
 	boid.translation = Vector3(boid.x, boid.y, boid.z)
-	boid.rotation = Vector3(atan2(boid.dx, boid.dy), atan2(boid.dy, boid.dx), abs(atan2(boid.dz, boid.dy))) # This will have to be fixed for sure.
-	#boid.rotation = Vector3(atan2(boid.dy, boid.dx), atan2(boid.dz, boid.dy), atan2(boid.dx, boid.dz)) # This will have to be fixed for sure.
-	#boid.translate(Vector3(boid.dx, boid.dy, boid.dz))
-	#boid.translate(Vector3(boid.x, boid.y, boid.z))
-	#boid.look_at(Vector3(boid.dx, boid.dy, boid.dz), Vector3.UP)
-	#boid.look_at_from_position(Vector3(boid.x, boid.y, boid.z), Vector3(boid.dx, boid.dy, boid.dz), Vector3.UP)
-	#move_to
-	#draw_trail
-	pass
+	var target = Vector3(-boid.dx, -boid.dy, -boid.dz)*100.0
+	boid.look_at(target, Vector3.UP)
