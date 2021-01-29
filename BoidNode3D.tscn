@@ -1,14 +1,7 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=3 format=2]
 
 [ext_resource path="res://BoidNode.gd" type="Script" id=1]
 [ext_resource path="res://materials/BoidNode3DTrailParticleMaterial.tres" type="Material" id=2]
-
-[sub_resource type="SpatialMaterial" id=8]
-vertex_color_use_as_albedo = true
-albedo_color = Color( 1, 0, 0, 1 )
-
-[sub_resource type="SphereMesh" id=7]
-radial_segments = 32
 
 [node name="Spatial" type="Spatial"]
 
@@ -31,10 +24,3 @@ transform = Transform( -1, 0, -3.25841e-07, 0, 1, 0, 3.25841e-07, 0, -1, 0, 0, -
 current = true
 near = 0.01
 far = 1000.0
-
-[node name="Particles" type="Particles" parent="."]
-visible = false
-material_override = SubResource( 8 )
-cast_shadow = 0
-process_material = ExtResource( 2 )
-draw_pass_1 = SubResource( 7 )

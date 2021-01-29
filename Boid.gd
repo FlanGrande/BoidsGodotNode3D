@@ -50,10 +50,10 @@ func initBoid(window_width, window_height, movement_depth, trail_enabled, trail_
 
 func _process(delta):
 	var translation_vector = Vector3(x, y, z)
-	trailLineIG.translation = Vector3()
-	trailLineIG.rotation = Vector3()
-	#print(Vector3(x, y, z))
+	
 	if(trailEnabled):
+		trailLineIG.translation = Vector3()
+		trailLineIG.rotation = Vector3()
 		trailLineIG.clear()
 		trailLineIG.begin(Mesh.PRIMITIVE_LINES)
 		trailLineIG.set_color(trailColor)
