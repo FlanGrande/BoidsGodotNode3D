@@ -1,17 +1,28 @@
-[gd_scene load_steps=2 format=2]
+[gd_scene load_steps=3 format=2]
 
 [ext_resource path="res://BoidNode.gd" type="Script" id=1]
+
+[sub_resource type="SpatialMaterial" id=1]
+vertex_color_use_as_albedo = true
+params_line_width = 10.0
 
 [node name="Spatial" type="Spatial"]
 
 [node name="BoidNode3D" type="Spatial" parent="."]
 transform = Transform( 0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0, 0 )
 script = ExtResource( 1 )
+numBoids = 10
+visualRange = 10.0
+flyTowardsCenterFactor = 0.001
+avoidOthersMinDistance = 4.0
+avoidOthersFactor = 0.01
+matchVelocityFactor = 0.01
+speedLimit = 0.8
+trailEnabled = true
+trailMaterial = SubResource( 1 )
 
 [node name="Camera" type="Camera" parent="."]
 transform = Transform( -1, 0, -3.25841e-07, 0, 1, 0, 3.25841e-07, 0, -1, 0, 0, -3 )
 current = true
 near = 0.01
 far = 1000.0
-
-[node name="ImmediateGeometry" type="ImmediateGeometry" parent="."]

@@ -14,12 +14,20 @@ var d = 20
 var offset = 10
 # Boid history of positions
 var history = []
+var historyLength = 20
+
+var trailEnabled = false
+var trailColor = Color(1.0, 0.0, 0.0, 1.0)
+var trailWidth = 1.0
+var trailLineIG : ImmediateGeometry
+var trailMaterial : Material
 
 
 func _ready():
+	#set_as_toplevel(true)
 	pass
 
-func initBoid(window_width, window_height, movement_depth):
+func initBoid(window_width, window_height, movement_depth, trail_enabled, trail_color, trail_width, trail_material, history_length):
 	x = rand_range(-window_width, window_width)
 	y = rand_range(-window_height, window_height)
 	z = rand_range(-movement_depth, movement_depth)
@@ -27,14 +35,38 @@ func initBoid(window_width, window_height, movement_depth):
 	dy = rand_range(0, d) - offset
 	dz = rand_range(0, d) - offset
 	history = []
+	trailEnabled = trail_enabled
+	trailColor = trail_color
+	trailWidth = trail_width
+	trailMaterial = trail_material
+	historyLength = history_length
+	
+	if(trailEnabled):
+		trailLineIG = ImmediateGeometry.new()
+		trailLineIG.material_override = trailMaterial
+		get_parent().add_child(trailLineIG)
+	
 	return self
 
 func _process(delta):
-	var translation_vector = Vector3(0, 0, 3.0)
-	$ImmediateGeometry.translation = translation_vector
+	var translation_vector = Vector3(x, y, z)
+	trailLineIG.translation = Vector3()
+	trailLineIG.rotation = Vector3()
 	#print(Vector3(x, y, z))
-	$ImmediateGeometry.clear()
-	$ImmediateGeometry.begin(Mesh.PRIMITIVE_TRIANGLES)
-	$ImmediateGeometry.set_color(Color.red)
-	$ImmediateGeometry.add_sphere(8.0, 8.0, 0.5)
-	$ImmediateGeometry.end()
+	if(trailEnabled):
+		trailLineIG.clear()
+		trailLineIG.begin(Mesh.PRIMITIVE_LINES)
+		trailLineIG.set_color(trailColor)
+		trailLineIG.set_normal(Vector3(1, 1, 1))
+		
+		for point in history:
+			trailLineIG.add_vertex(Vector3(point[0], point[1], point[2]))
+			#trailLineIG.add_sphere(cartesian2polar())
+		
+		trailLineIG.end()
+
+func addToHistory(var point : Vector3, var index : int):
+	history.push_back(point)
+	
+	if(history.size() > historyLength): # This will probably give me some issues.
+		history.pop_front() # This will probably give me some issues.

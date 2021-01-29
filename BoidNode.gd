@@ -4,12 +4,43 @@ extends Spatial
 
 onready var boid_scene = preload("res://Boid3D.tscn")
 
-var window_width = 24.0
-var window_height = 24.0
-var forward_depth = 16.0
+export var window_width = 24.0
+export var window_height = 24.0
+export var forward_depth = 16.0
 
-const numBoids = 20
-const visualRange = 20
+export(int, 0, 1000) var numBoids = 20 # Number of boids spawned at the start (it should be adjustable dynamically).
+export(float, 0.0, 9999.0) var visualRange = 20 # Visual range of the boids. Will determine who is a neighbour.
+
+# keepWithinBounds
+export(float, 0.0, 9999.0) var keepWithinBoundsMargin = 40 # keepWithinBoundskeepWithinBoundsMargin for out of bounds area.
+export(float, -999.0, 999.0) var keepWithinBoundsFactor = 0.1 # Constant to adjust keepWithinBounds weight. Usually higher than anything else.
+
+# flyTowardsCenter
+export(float, -999.0, 999.0) var flyTowardsCenterFactor = 0.005; # Weight for flyTowardsCenter behaviour.
+
+# avoidOthers
+export(float, 0, 9999.0) var avoidOthersMinDistance = 1 # The distance to stay away from other boids.
+export(float, -999.0, 999.0) var avoidOthersFactor = 0.05 # The rate at which boids correct their position.
+
+# matchVelocity
+export(float, -999.0, 999.0) var matchVelocityFactor = 0.05 # Boids adjust their velocity to match others at this rate.
+
+# limitSpeed
+export(float, 0, 9999.0) var speedLimit = 5 # Maximum speed of a boid.
+
+# flyTowardsMouse
+export(float, -999.0, 999.0) var flyTowardsMouseFactor = 0.005; # adjust velocity by this % # CONST?
+export(float, 0, 9999.0) var flyTowardsMouseVisualRange = 200
+
+# avoidMouse
+export(float, 0, 9999.0) var avoidMouseMinDistance = 100 # The distance to stay away from other boids # CONST?
+export(float, -999.0, 999.0) var avoidMouseFactor = 0.05 # Adjust velocity by this % # CONST?
+
+export(bool) var trailEnabled = false
+export(Color) var trailColor = Color(1.0, 0.0, 0.0, 1.0)
+export(float) var trailWidth = 1.0
+export var trailMaterial : Material
+export(int, 0, 1000) var boidHistoryLength = 20 # Also trail length
 
 var boids = []
 
@@ -17,8 +48,8 @@ var boids = []
 func _ready():
 	for i in range(numBoids):
 		var new_boid = boid_scene.instance()
-		boids.push_back(new_boid.initBoid(window_width, window_height, forward_depth))
-		add_child(new_boid)
+		add_child(new_boid) # This needs to be done first because boids call get_parent on initBoid()
+		boids.push_back(new_boid.initBoid(window_width, window_height, forward_depth, trailEnabled, trailColor, trailWidth, trailMaterial, boidHistoryLength))
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
@@ -44,34 +75,29 @@ func _process(delta):
 # Constrain a boid to within the window. If it gets too close to an edge,
 # nudge it back in and reverse its direction.
 func keepWithinBounds(boid : Boid3D):
-	var margin = 40.0 # CONST?
-	var turnFactor = 0.1 # CONST?
+	if (boid.x < keepWithinBoundsMargin):
+		boid.dx += keepWithinBoundsFactor
 	
-	if (boid.x < margin):
-		boid.dx += turnFactor
+	if (boid.x > window_width - keepWithinBoundsMargin):
+		boid.dx -= keepWithinBoundsFactor
 	
-	if (boid.x > window_width - margin):
-		boid.dx -= turnFactor
+	if (boid.y < keepWithinBoundsMargin):
+		boid.dy += keepWithinBoundsFactor
 	
-	if (boid.y < margin):
-		boid.dy += turnFactor
+	if (boid.y > window_height - keepWithinBoundsMargin):
+		boid.dy -= keepWithinBoundsFactor
 	
-	if (boid.y > window_height - margin):
-		boid.dy -= turnFactor
+	if (boid.z < keepWithinBoundsMargin):
+		boid.dz += keepWithinBoundsFactor
 	
-	if (boid.z < margin):
-		boid.dz += turnFactor
-	
-	if (boid.z > forward_depth - margin):
-		boid.dz -= turnFactor
+	if (boid.z > forward_depth - keepWithinBoundsMargin):
+		boid.dz -= keepWithinBoundsFactor
 
 
 # Find the center of mass of the other boids and adjust velocity slightly to
 # point towards the center of mass.
 func flyTowardsCenter(boid : Boid3D):
 	var boidPosition = Vector3(boid.x, boid.y, boid.z)
-	var centeringFactor = 0.005; # adjust velocity by this % # CONST?
-	
 	var centerX = 0;
 	var centerY = 0;
 	var centerZ = 0;
@@ -89,16 +115,14 @@ func flyTowardsCenter(boid : Boid3D):
 		centerX = centerX / numNeighbors
 		centerY = centerY / numNeighbors
 		centerZ = centerZ / numNeighbors
-		boid.dx += (centerX - boid.x) * centeringFactor
-		boid.dy += (centerY - boid.y) * centeringFactor
-		boid.dz += (centerZ - boid.z) * centeringFactor
+		boid.dx += (centerX - boid.x) * flyTowardsCenterFactor
+		boid.dy += (centerY - boid.y) * flyTowardsCenterFactor
+		boid.dz += (centerZ - boid.z) * flyTowardsCenterFactor
 
 
 # Move away from other boids that are too close to avoid colliding
 func avoidOthers(boid : Boid3D):
 	var boidPosition = Vector3(boid.x, boid.y, boid.z)
-	var minDistance = 4.0 # The distance to stay away from other boids # CONST?
-	var avoidFactor = 0.05 # Adjust velocity by this % # CONST?
 	var moveX = 0
 	var moveY = 0
 	var moveZ = 0
@@ -106,21 +130,19 @@ func avoidOthers(boid : Boid3D):
 	for otherBoid in boids:
 		var otherBoidPosition = Vector3(otherBoid.x, otherBoid.y, otherBoid.z)
 		if(otherBoid != boid): # Is it really different as in javascript?
-			if(boidPosition.distance_to(otherBoidPosition) < minDistance):
+			if(boidPosition.distance_to(otherBoidPosition) < avoidOthersMinDistance):
 				moveX += boid.x - otherBoid.x;
 				moveY += boid.y - otherBoid.y;
 				moveZ += boid.z - otherBoid.z;
 	
-	boid.dx += moveX * avoidFactor
-	boid.dy += moveY * avoidFactor
-	boid.dz += moveZ * avoidFactor
+	boid.dx += moveX * avoidOthersFactor
+	boid.dy += moveY * avoidOthersFactor
+	boid.dz += moveZ * avoidOthersFactor
 
 # Find the average velocity (speed and direction) of the other boids and
 # adjust velocity slightly to match.
 func matchVelocity(boid : Boid3D):
 	var boidPosition = Vector3(boid.x, boid.y, boid.z)
-	var matchingFactor = 0.05 # Adjust by this % of average velocity # CONST?
-	
 	var avgDX = 0
 	var avgDY = 0
 	var avgDZ = 0
@@ -139,14 +161,13 @@ func matchVelocity(boid : Boid3D):
 		avgDY = avgDY / numNeighbors
 		avgDZ = avgDZ / numNeighbors
 		
-		boid.dx += (avgDX - boid.dx) * matchingFactor
-		boid.dy += (avgDY - boid.dy) * matchingFactor
-		boid.dz += (avgDZ - boid.dz) * matchingFactor
+		boid.dx += (avgDX - boid.dx) * matchVelocityFactor
+		boid.dy += (avgDY - boid.dy) * matchVelocityFactor
+		boid.dz += (avgDZ - boid.dz) * matchVelocityFactor
 
 # Speed will naturally vary in flocking behavior, but real animals can't go
 # arbitrarily fast.
 func limitSpeed(boid : Boid3D):
-	var speedLimit = 1.0# CONST?
 	var speed = pow(boid.dx * boid.dx + boid.dy * boid.dy + boid.dz * boid.dz, 1.0/3.0) # CONST?
 	
 	if(speed > speedLimit):
