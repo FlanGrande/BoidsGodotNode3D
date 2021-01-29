@@ -65,9 +65,7 @@ func _process(delta):
 		boid.x += boid.dx;
 		boid.y += boid.dy;
 		boid.z += boid.dz;
-		boid.history.push_back([boid.x, boid.y, boid.z])
-		if(boid.history.size() > 50): # This will probably give me some issues.
-			boid.history.pop_front() # This will probably give me some issues.
+		boid.addToHistory(Vector3(boid.x, boid.y, boid.z), boid.history.size())
 		
 		drawBoid(boid)
 

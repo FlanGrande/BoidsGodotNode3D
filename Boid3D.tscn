@@ -10,5 +10,3 @@ script = ExtResource( 1 )
 cast_shadow = 0
 mesh = ExtResource( 2 )
 material/0 = null
-
-[node name="ImmediateGeometry" type="ImmediateGeometry" parent="."]

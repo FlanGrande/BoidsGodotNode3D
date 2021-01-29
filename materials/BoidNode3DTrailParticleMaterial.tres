@@ -1,0 +1,30 @@
+[gd_resource type="ParticlesMaterial" load_steps=6 format=2]
+
+[sub_resource type="SpatialMaterial" id=6]
+vertex_color_use_as_albedo = true
+albedo_color = Color( 1, 0, 0, 1 )
+
+[sub_resource type="Gradient" id=2]
+offsets = PoolRealArray( 0, 0.481707, 0.829268, 1 )
+colors = PoolColorArray( 1, 0, 0, 1, 1, 0, 0, 1, 1, 0.670588, 0.670588, 1, 1, 1, 1, 1 )
+
+[sub_resource type="GradientTexture" id=3]
+gradient = SubResource( 2 )
+
+[sub_resource type="Curve" id=4]
+_data = [ Vector2( 0, 0 ), 0.0, 0.0, 0, 0, Vector2( 1, 1 ), 0.0, 0.0, 0, 0 ]
+
+[sub_resource type="CurveTexture" id=5]
+curve = SubResource( 4 )
+
+[resource]
+next_pass = SubResource( 6 )
+trail_divisor = 2
+trail_size_modifier = SubResource( 5 )
+trail_color_modifier = SubResource( 3 )
+emission_shape = 1
+emission_sphere_radius = 0.1
+direction = Vector3( 0, 0, -1 )
+spread = 0.0
+gravity = Vector3( 0, 0, 0 )
+color = Color( 1, 0, 0, 1 )

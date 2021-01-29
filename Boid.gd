@@ -21,10 +21,10 @@ var trailColor = Color(1.0, 0.0, 0.0, 1.0)
 var trailWidth = 1.0
 var trailLineIG : ImmediateGeometry
 var trailMaterial : Material
+var trailParticles : Particles
 
 
 func _ready():
-	#set_as_toplevel(true)
 	pass
 
 func initBoid(window_width, window_height, movement_depth, trail_enabled, trail_color, trail_width, trail_material, history_length):
@@ -44,7 +44,7 @@ func initBoid(window_width, window_height, movement_depth, trail_enabled, trail_
 	if(trailEnabled):
 		trailLineIG = ImmediateGeometry.new()
 		trailLineIG.material_override = trailMaterial
-		get_parent().add_child(trailLineIG)
+		get_parent().add_child(trailLineIG) # This is better than set_as_toplevel(true)
 	
 	return self
 
@@ -59,9 +59,12 @@ func _process(delta):
 		trailLineIG.set_color(trailColor)
 		trailLineIG.set_normal(Vector3(1, 1, 1))
 		
+		var previous_point = history[0]
 		for point in history:
-			trailLineIG.add_vertex(Vector3(point[0], point[1], point[2]))
-			#trailLineIG.add_sphere(cartesian2polar())
+			if(previous_point != point):
+				trailLineIG.add_vertex(Vector3(previous_point[0], previous_point[1], previous_point[2]))
+				trailLineIG.add_vertex(Vector3(point[0], point[1], point[2]))
+				previous_point = point
 		
 		trailLineIG.end()
 
