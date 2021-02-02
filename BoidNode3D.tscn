@@ -1,20 +1,27 @@
-[gd_scene load_steps=3 format=2]
+[gd_scene load_steps=4 format=2]
 
 [ext_resource path="res://BoidNode.gd" type="Script" id=1]
 [ext_resource path="res://materials/BoidNode3DTrailParticleMaterial.tres" type="Material" id=2]
+[ext_resource path="res://BoidNode3D.gd" type="Script" id=3]
 
 [node name="Spatial" type="Spatial"]
+script = ExtResource( 3 )
 
 [node name="BoidNode3D" type="Spatial" parent="."]
 transform = Transform( 0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0, 0 )
 script = ExtResource( 1 )
-numBoids = 30
+numBoids = 60
 visualRange = 14.0
 flyTowardsCenterFactor = 0.001
 avoidOthersMinDistance = 4.0
-avoidOthersFactor = 0.01
+avoidOthersFactor = 0.02
 matchVelocityFactor = 0.01
 speedLimit = 0.8
+mouseInteractionsEnabled = true
+flyTowardsMouseFactor = 0.01
+flyTowardsMouseVisualRange = 10.0
+avoidMouseMinDistance = 8.0
+avoidMouseFactor = 0.012
 trailEnabled = true
 trailMaterial = ExtResource( 2 )
 boidHistoryLength = 200
@@ -24,3 +31,5 @@ transform = Transform( -1, 0, -3.25841e-07, 0, 1, 0, 3.25841e-07, 0, -1, 0, 0, -
 current = true
 near = 0.01
 far = 1000.0
+
+[node name="MeshInstance" type="MeshInstance" parent="."]

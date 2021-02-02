@@ -8,6 +8,9 @@ export var window_width = 24.0
 export var window_height = 24.0
 export var forward_depth = 16.0
 
+var mouse_position = Vector2()
+var mouse_speed = Vector2()
+
 export(int, 0, 1000) var numBoids = 20 # Number of boids spawned at the start (it should be adjustable dynamically).
 export(float, 0.0, 9999.0) var visualRange = 20 # Visual range of the boids. Will determine who is a neighbour.
 
@@ -28,13 +31,16 @@ export(float, -999.0, 999.0) var matchVelocityFactor = 0.05 # Boids adjust their
 # limitSpeed
 export(float, 0, 9999.0) var speedLimit = 5 # Maximum speed of a boid.
 
+# Mouse options
+export(bool) var mouseInteractionsEnabled
+
 # flyTowardsMouse
 export(float, -999.0, 999.0) var flyTowardsMouseFactor = 0.005; # adjust velocity by this % # CONST?
 export(float, 0, 9999.0) var flyTowardsMouseVisualRange = 200
 
 # avoidMouse
 export(float, 0, 9999.0) var avoidMouseMinDistance = 100 # The distance to stay away from other boids # CONST?
-export(float, -999.0, 999.0) var avoidMouseFactor = 0.05 # Adjust velocity by this % # CONST?
+export(float, -999.0, 999.0) var avoidMouseFactor = 0.00 # Adjust velocity by this % # CONST?
 
 export(bool) var trailEnabled = false
 export(Color) var trailColor = Color(1.0, 0.0, 0.0, 1.0)
@@ -43,9 +49,12 @@ export var trailMaterial : Material
 export(int, 0, 1000) var boidHistoryLength = 20 # Also trail length
 
 var boids = []
-
+var mouse_sphere : MeshInstance
 
 func _ready():
+	mouse_sphere = MeshInstance.new()
+	mouse_sphere.mesh = SphereMesh.new()
+	add_child(mouse_sphere)
 	for i in range(numBoids):
 		var new_boid = boid_scene.instance()
 		add_child(new_boid) # This needs to be done first because boids call get_parent on initBoid()
@@ -58,6 +67,11 @@ func _process(delta):
 		flyTowardsCenter(boid)
 		avoidOthers(boid)
 		matchVelocity(boid)
+		
+		if(mouseInteractionsEnabled):
+			flyTowardsMouse(boid)
+			avoidMouse(boid)
+		
 		limitSpeed(boid)
 		keepWithinBounds(boid)
 		
@@ -68,7 +82,13 @@ func _process(delta):
 		boid.addToHistory(Vector3(boid.x, boid.y, boid.z), boid.history.size())
 		
 		drawBoid(boid)
-
+	
+	var position_x = clamp(-mouse_position.x + 100, -36.0, 36.0)
+	position_x = lerp(-1.0, 1.0, -mouse_position.x + 20) # Find a way of linking mouse position to 3d places.
+	var position_y = clamp(-mouse_position.y + 100, -20.0, 20.0)
+	
+	#var position_z = mouse_position.z
+	mouse_sphere.translation = Vector3(position_x, position_y, 0.0)
 
 # Constrain a boid to within the window. If it gets too close to an edge,
 # nudge it back in and reverse its direction.
@@ -173,7 +193,66 @@ func limitSpeed(boid : Boid3D):
 		boid.dy = (boid.dy / speed) * speedLimit
 		boid.dz = (boid.dz / speed) * speedLimit
 
+func flyTowardsMouse(boid : Boid3D):
+	var boidPosition = Vector3(boid.x, boid.y, boid.z)
+	var mousePosition = mouse_sphere.translation
+	var centerX = 0
+	var centerY = 0
+	var centerZ = 0
+	var numNeighbors = 0
+	
+	var tmpBoidPositionVec2 = Vector2(boid.x, boid.y)
+	var tmpMousePositionVec2 = Vector2(mousePosition.x, mousePosition.y)
+	
+	if(tmpBoidPositionVec2.distance_to(tmpMousePositionVec2) < flyTowardsMouseVisualRange):
+		centerX += mousePosition.x
+		centerY += mousePosition.y
+		#centerZ += mousePosition.z # Reevaluate this please.
+		numNeighbors += 1
+	
+	if(numNeighbors > 0):
+		centerX = centerX / numNeighbors
+		centerY = centerY / numNeighbors
+		centerZ = centerY / numNeighbors
+		boid.dx += (centerX - boid.x) * flyTowardsMouseFactor
+		boid.dy += (centerY - boid.y) * flyTowardsMouseFactor
+		boid.dz += (centerZ - boid.z) * flyTowardsMouseFactor
+
+func avoidMouse(boid : Boid3D):
+	var boidPosition = Vector3(boid.x, boid.y, boid.z)
+	var mousePosition = mouse_sphere.translation
+	var moveX = 0
+	var moveY = 0
+	var moveZ = 0
+	
+	var tmpBoidPositionVec2 = Vector2(boid.x, boid.y)
+	var tmpMousePositionVec2 = Vector2(mousePosition.x, mousePosition.y)
+	
+	if(tmpBoidPositionVec2.distance_to(tmpMousePositionVec2) < avoidMouseMinDistance):
+		moveX += boid.x - mousePosition.x
+		moveY += boid.y - mousePosition.y
+		moveZ += boid.z - mousePosition.z # Reevaluate this please.
+	
+	boid.dx += moveX * avoidMouseFactor
+	boid.dy += moveY * avoidMouseFactor
+	boid.dz += moveZ * avoidMouseFactor
+
 func drawBoid(boid : Boid3D):
 	boid.translation = Vector3(boid.x, boid.y, boid.z)
-	var target = Vector3(-boid.dx, -boid.dy, -boid.dz)*100.0
+	var target = Vector3(-boid.dx, -boid.dy, -boid.dz)*200.0
 	boid.look_at(target, Vector3.UP)
+
+func _input(event):
+	if event is InputEventMouseMotion:
+		mouse_position = event.position
+		mouse_speed = event.speed
+
+func OnDebugTimerTimeout():
+	print("mouse_sphere.translation:")
+	print(mouse_sphere.translation)
+	print("")
+	print("boid 0 position")
+	print(Vector3(boids[0].x, boids[0].y, boids[0].z))
+	print(Vector3(boids[0].dx, boids[0].dy, boids[0].dz))
+	print("")
+	print("")

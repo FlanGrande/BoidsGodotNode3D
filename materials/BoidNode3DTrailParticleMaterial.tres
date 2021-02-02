@@ -1,6 +1,6 @@
 [gd_resource type="ParticlesMaterial" load_steps=6 format=2]
 
-[sub_resource type="SpatialMaterial" id=6]
+[sub_resource type="SpatialMaterial" id=1]
 vertex_color_use_as_albedo = true
 albedo_color = Color( 1, 0, 0, 1 )
 
@@ -18,7 +18,7 @@ _data = [ Vector2( 0, 0 ), 0.0, 0.0, 0, 0, Vector2( 1, 1 ), 0.0, 0.0, 0, 0 ]
 curve = SubResource( 4 )
 
 [resource]
-next_pass = SubResource( 6 )
+next_pass = SubResource( 1 )
 trail_divisor = 2
 trail_size_modifier = SubResource( 5 )
 trail_color_modifier = SubResource( 3 )
