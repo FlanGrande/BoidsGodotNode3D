@@ -4,9 +4,17 @@ extends Spatial
 
 onready var boid_scene = preload("res://Boid3D.tscn")
 
-export var window_width = 24.0
-export var window_height = 24.0
+export var debugMode : bool
+
+export var window_width = 36.0
+export var window_height = 20.0
 export var forward_depth = 16.0
+export var z_offset = 0.0
+
+export var left_bound = -36.0
+export var right_bound = 36.0
+export var top_bound = 20.0
+export var bottom_bound = -20.0
 
 var mouse_position = Vector2()
 var mouse_speed = Vector2()
@@ -49,16 +57,34 @@ export var trailMaterial : Material
 export(int, 0, 1000) var boidHistoryLength = 20 # Also trail length
 
 var boids = []
-var mouse_sphere : MeshInstance
+var mouse_sphere_mesh : MeshInstance
+var mouse_sphere_kinematicbody = KinematicBody.new()
+
+var debug_modeIG : ImmediateGeometry
 
 func _ready():
-	mouse_sphere = MeshInstance.new()
-	mouse_sphere.mesh = SphereMesh.new()
-	add_child(mouse_sphere)
+	if(debugMode):
+		debug_modeIG = ImmediateGeometry.new()
+		debug_modeIG.material_override = trailMaterial # Why not.
+		debug_modeIG.translation = Vector3(0.0, 0.0, 0.0)
+		add_child(debug_modeIG) # This is better than set_as_toplevel(true)
+	
+	if(mouseInteractionsEnabled):
+		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+		
+		mouse_sphere_mesh = MeshInstance.new()
+		mouse_sphere_mesh.translation = Vector3()
+		mouse_sphere_mesh.mesh = SphereMesh.new()
+		mouse_sphere_kinematicbody.translation = Vector3()
+		mouse_sphere_kinematicbody.move_lock_z = true
+		mouse_sphere_kinematicbody.add_child(mouse_sphere_mesh)
+	
+	add_child(mouse_sphere_kinematicbody)
 	for i in range(numBoids):
 		var new_boid = boid_scene.instance()
 		add_child(new_boid) # This needs to be done first because boids call get_parent on initBoid()
 		boids.push_back(new_boid.initBoid(window_width, window_height, forward_depth, trailEnabled, trailColor, trailWidth, trailMaterial, boidHistoryLength))
+		new_boid.translation.z = z_offset
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
@@ -76,19 +102,15 @@ func _process(delta):
 		keepWithinBounds(boid)
 		
 		#Update the position based on the current velocity
-		boid.x += boid.dx;
-		boid.y += boid.dy;
-		boid.z += boid.dz;
+		boid.x += boid.dx*delta*20;
+		boid.y += boid.dy*delta*20;
+		boid.z += boid.dz*delta*20;
 		boid.addToHistory(Vector3(boid.x, boid.y, boid.z), boid.history.size())
 		
 		drawBoid(boid)
 	
-	var position_x = clamp(-mouse_position.x + 100, -36.0, 36.0)
-	position_x = lerp(-1.0, 1.0, -mouse_position.x + 20) # Find a way of linking mouse position to 3d places.
-	var position_y = clamp(-mouse_position.y + 100, -20.0, 20.0)
-	
-	#var position_z = mouse_position.z
-	mouse_sphere.translation = Vector3(position_x, position_y, 0.0)
+	mouse_sphere_kinematicbody.translation.x = lerp(right_bound, left_bound, mouse_position.x/get_viewport().size.x)
+	mouse_sphere_kinematicbody.translation.y = lerp(top_bound, bottom_bound, mouse_position.y/get_viewport().size.y)
 
 # Constrain a boid to within the window. If it gets too close to an edge,
 # nudge it back in and reverse its direction.
@@ -195,16 +217,18 @@ func limitSpeed(boid : Boid3D):
 
 func flyTowardsMouse(boid : Boid3D):
 	var boidPosition = Vector3(boid.x, boid.y, boid.z)
-	var mousePosition = mouse_sphere.translation
+	var mousePosition = mouse_sphere_kinematicbody.translation
 	var centerX = 0
 	var centerY = 0
 	var centerZ = 0
 	var numNeighbors = 0
 	
 	var tmpBoidPositionVec2 = Vector2(boid.x, boid.y)
+	var tmpBoidPositionVec3 = Vector3(boid.x, boid.y, boid.z)
 	var tmpMousePositionVec2 = Vector2(mousePosition.x, mousePosition.y)
+	var tmpMousePositionVec3 = Vector3(mousePosition.x, mousePosition.y, mousePosition.z)
 	
-	if(tmpBoidPositionVec2.distance_to(tmpMousePositionVec2) < flyTowardsMouseVisualRange):
+	if(tmpBoidPositionVec3.distance_to(tmpMousePositionVec3) < flyTowardsMouseVisualRange):
 		centerX += mousePosition.x
 		centerY += mousePosition.y
 		#centerZ += mousePosition.z # Reevaluate this please.
@@ -216,30 +240,33 @@ func flyTowardsMouse(boid : Boid3D):
 		centerZ = centerY / numNeighbors
 		boid.dx += (centerX - boid.x) * flyTowardsMouseFactor
 		boid.dy += (centerY - boid.y) * flyTowardsMouseFactor
-		boid.dz += (centerZ - boid.z) * flyTowardsMouseFactor
+		#boid.dz += (centerZ - boid.z) * flyTowardsMouseFactor
 
 func avoidMouse(boid : Boid3D):
 	var boidPosition = Vector3(boid.x, boid.y, boid.z)
-	var mousePosition = mouse_sphere.translation
+	var mousePosition = mouse_sphere_kinematicbody.translation
 	var moveX = 0
 	var moveY = 0
 	var moveZ = 0
 	
 	var tmpBoidPositionVec2 = Vector2(boid.x, boid.y)
+	var tmpBoidPositionVec3 = Vector3(boid.x, boid.y, boid.z)
 	var tmpMousePositionVec2 = Vector2(mousePosition.x, mousePosition.y)
+	var tmpMousePositionVec3 = Vector3(mousePosition.x, mousePosition.y, mousePosition.z)
 	
-	if(tmpBoidPositionVec2.distance_to(tmpMousePositionVec2) < avoidMouseMinDistance):
+	if(tmpBoidPositionVec3.distance_to(tmpMousePositionVec3) < avoidMouseMinDistance):
 		moveX += boid.x - mousePosition.x
 		moveY += boid.y - mousePosition.y
-		moveZ += boid.z - mousePosition.z # Reevaluate this please.
+		#moveZ += boid.z - mousePosition.z # Reevaluate this please.
 	
 	boid.dx += moveX * avoidMouseFactor
 	boid.dy += moveY * avoidMouseFactor
-	boid.dz += moveZ * avoidMouseFactor
+	#boid.dz += moveZ * avoidMouseFactor
 
 func drawBoid(boid : Boid3D):
+	var always_look_forward = 1.2
 	boid.translation = Vector3(boid.x, boid.y, boid.z)
-	var target = Vector3(-boid.dx, -boid.dy, -boid.dz)*200.0
+	var target = Vector3(-boid.dx, -boid.dy, -boid.dz - always_look_forward)*200.0
 	boid.look_at(target, Vector3.UP)
 
 func _input(event):
@@ -247,9 +274,15 @@ func _input(event):
 		mouse_position = event.position
 		mouse_speed = event.speed
 
+func _draw():
+	debug_modeIG.begin(Mesh.PRIMITIVE_TRIANGLE)
+	debug_modeIG.add_sphere(8.0, 8.0, 1.0)
+	debug_modeIG.end()
+
 func OnDebugTimerTimeout():
 	print("mouse_sphere.translation:")
-	print(mouse_sphere.translation)
+	print(mouse_sphere_kinematicbody.translation)
+	print(mouse_position)
 	print("")
 	print("boid 0 position")
 	print(Vector3(boids[0].x, boids[0].y, boids[0].z))
