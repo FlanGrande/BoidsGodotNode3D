@@ -15,7 +15,6 @@ window_width = 2.0
 forward_depth = 8.0
 z_offset = -300.0
 numBoids = 60
-visualRange = 20.0
 flyTowardsCenterFactor = 0.001
 avoidOthersMinDistance = 6.0
 avoidOthersFactor = 0.02

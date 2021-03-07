@@ -41,6 +41,7 @@ export(float, 0, 9999.0) var speedLimit = 5 # Maximum speed of a boid.
 
 # Mouse options
 export(bool) var mouseInteractionsEnabled
+export(bool) var mouseSphereVisible = false
 
 # flyTowardsMouse
 export(float, -999.0, 999.0) var flyTowardsMouseFactor = 0.005; # adjust velocity by this % # CONST?
@@ -59,7 +60,6 @@ export(int, 0, 1000) var boidHistoryLength = 20 # Also trail length
 var boids = []
 var mouse_sphere_mesh : MeshInstance
 var mouse_sphere_kinematicbody = KinematicBody.new()
-export(bool) var mouseSphereVisible = false
 
 var debug_modeIG : ImmediateGeometry
 
