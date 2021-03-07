@@ -59,6 +59,7 @@ export(int, 0, 1000) var boidHistoryLength = 20 # Also trail length
 var boids = []
 var mouse_sphere_mesh : MeshInstance
 var mouse_sphere_kinematicbody = KinematicBody.new()
+export(bool) var mouseSphereVisible = false
 
 var debug_modeIG : ImmediateGeometry
 
@@ -77,6 +78,7 @@ func _ready():
 		mouse_sphere_mesh.mesh = SphereMesh.new()
 		mouse_sphere_kinematicbody.translation = Vector3()
 		mouse_sphere_kinematicbody.move_lock_z = true
+		mouse_sphere_kinematicbody.visible = mouseSphereVisible
 		mouse_sphere_kinematicbody.add_child(mouse_sphere_mesh)
 	
 	add_child(mouse_sphere_kinematicbody)
